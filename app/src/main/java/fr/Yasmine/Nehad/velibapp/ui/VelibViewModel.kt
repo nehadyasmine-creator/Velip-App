@@ -43,7 +43,7 @@ class VelibViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    // Rayon de recherche en mètres (paramètre utilisateur)
+    // Rayon de recherche en mètres
     private val _searchRadius = MutableStateFlow(500)
     val searchRadius: StateFlow<Int> = _searchRadius
 
@@ -88,7 +88,6 @@ class VelibViewModel(application: Application) : AndroidViewModel(application) {
 
     fun isFavorite(stationId: Long): Flow<Boolean> = repository.isFavorite(stationId)
 
-    // Localisation
     private val _userLocation = MutableStateFlow<android.location.Location?>(null)
     val userLocation: StateFlow<android.location.Location?> = _userLocation
 
@@ -137,7 +136,7 @@ class VelibViewModel(application: Application) : AndroidViewModel(application) {
     private val _activeFilter = MutableStateFlow(StationFilter.ALL)
     val activeFilter: StateFlow<StationFilter> = _activeFilter
 
-    // Stations filtrées (combines recherche + filtre)
+    // Stations filtrées
     val filteredStations: StateFlow<List<Station>> = combine(
         _stations, _searchQuery, _activeFilter
     ) { stations, query, filter ->

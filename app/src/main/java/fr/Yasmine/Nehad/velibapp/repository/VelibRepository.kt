@@ -11,7 +11,7 @@ class VelibRepository(
     private val dao: FavoriteStationDao
 ) {
 
-    // --- API ---
+    // API
     suspend fun getStations(): List<Station> {
         val infoList = apiService.getStationInformation().data.stations
         val statusList = apiService.getStationStatus().data.stations
@@ -20,8 +20,6 @@ class VelibRepository(
 
         return infoList.mapNotNull { info ->
             val status = statusMap[info.station_id] ?: return@mapNotNull null
-
-            // ✅ Nouveau calcul correct
             val bikeTypes = status.num_bikes_available_types
             val ebikes = bikeTypes.sumOf { it["ebike"] ?: 0 }
             val mechanical = bikeTypes.sumOf { it["mechanical"] ?: 0 }
@@ -43,7 +41,7 @@ class VelibRepository(
         }
     }
 
-    // --- Favoris ---
+    // Favoris
     fun getAllFavorites(): Flow<List<FavoriteStation>> = dao.getAllFavorites()
 
     fun isFavorite(stationId: Long): Flow<Boolean> = dao.isFavorite(stationId)

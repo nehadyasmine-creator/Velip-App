@@ -17,12 +17,11 @@ class MainActivity : ComponentActivity() {
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* permission accordée ou refusée, géré dans NearbyScreen */ }
+    ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Demande les permissions dès le démarrage
         locationPermissionRequest.launch(
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
@@ -31,7 +30,7 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            VelibAppTheme {  // ← remplace MaterialTheme
+            VelibAppTheme {
                 VelibNavGraph(viewModel = viewModel)
             }
         }

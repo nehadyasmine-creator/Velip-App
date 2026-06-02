@@ -38,7 +38,7 @@ fun createPinDrawable(context: Context): Drawable {
     val canvas = android.graphics.Canvas(bitmap)
     val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
 
-    paint.color = android.graphics.Color.RED
+    paint.color = android.graphics.Color.rgb(46, 125, 50)
     canvas.drawCircle(width / 2f, width / 2f, width / 2f, paint)
 
     val path = android.graphics.Path().apply {
@@ -55,6 +55,12 @@ fun createPinDrawable(context: Context): Drawable {
     return android.graphics.drawable.BitmapDrawable(context.resources, bitmap)
 }
 
+object MapState {
+    var savedCenter: GeoPoint = GeoPoint(48.8566, 2.3522)
+    var savedZoom: Double = 13.0
+    var hasZoomedOnUser: Boolean = false
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -69,12 +75,24 @@ fun MapScreen(
     val activeFilter by viewModel.activeFilter.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val userLocation by viewModel.userLocation.collectAsState()
 
     var myLocationOverlay: MyLocationNewOverlay? = null
     var mapViewRef: MapView? = null
 
     LaunchedEffect(Unit) {
         viewModel.initLocation(context)
+    }
+
+    LaunchedEffect(userLocation) {
+        if (userLocation != null && !MapState.hasZoomedOnUser) {
+            val userGeoPoint = GeoPoint(userLocation!!.latitude, userLocation!!.longitude)
+            mapViewRef?.controller?.animateTo(userGeoPoint)
+            mapViewRef?.controller?.setZoom(12.0)
+            MapState.savedCenter = userGeoPoint
+            MapState.savedZoom = 12.0
+            MapState.hasZoomedOnUser = true
+        }
     }
 
     Configuration.getInstance().load(
@@ -89,11 +107,7 @@ fun MapScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🚲", fontSize = 22.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Vélib'App",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
+                        Text("Vélib'App", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -103,11 +117,7 @@ fun MapScreen(
                 ),
                 actions = {
                     IconButton(onClick = { viewModel.loadStations() }) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Rafraîchir",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.Refresh, contentDescription = "Rafraîchir", tint = Color.White)
                     }
                 }
             )
@@ -123,8 +133,10 @@ fun MapScreen(
                     MapView(ctx).apply {
                         setTileSource(TileSourceFactory.MAPNIK)
                         setMultiTouchControls(true)
-                        controller.setZoom(13.0)
-                        controller.setCenter(GeoPoint(48.8566, 2.3522))
+
+                        controller.setZoom(MapState.savedZoom)
+                        controller.setCenter(MapState.savedCenter)
+
                         val locationOverlay = MyLocationNewOverlay(
                             GpsMyLocationProvider(ctx), this
                         )
@@ -132,6 +144,19 @@ fun MapScreen(
                         overlays.add(locationOverlay)
                         myLocationOverlay = locationOverlay
                         mapViewRef = this
+
+                        addMapListener(object : org.osmdroid.events.MapListener {
+                            override fun onScroll(event: org.osmdroid.events.ScrollEvent): Boolean {
+                                MapState.savedCenter = mapCenter as GeoPoint
+                                MapState.savedZoom = zoomLevelDouble
+                                return false
+                            }
+                            override fun onZoom(event: org.osmdroid.events.ZoomEvent): Boolean {
+                                MapState.savedCenter = mapCenter as GeoPoint
+                                MapState.savedZoom = zoomLevelDouble
+                                return false
+                            }
+                        })
                     }
                 },
                 update = { mapView ->
@@ -155,7 +180,6 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Boutons FAB
             Column(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -178,7 +202,9 @@ fun MapScreen(
                     onClick = {
                         myLocationOverlay?.myLocation?.let { location ->
                             mapViewRef?.controller?.animateTo(location)
-                            mapViewRef?.controller?.setZoom(17.0)
+                            mapViewRef?.controller?.setZoom(15.0)
+                            MapState.savedCenter = location
+                            MapState.savedZoom = 15.0
                         }
                     },
                     containerColor = MaterialTheme.colorScheme.primary
@@ -187,7 +213,6 @@ fun MapScreen(
                 }
             }
 
-            // Barre de recherche + filtres en bas
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

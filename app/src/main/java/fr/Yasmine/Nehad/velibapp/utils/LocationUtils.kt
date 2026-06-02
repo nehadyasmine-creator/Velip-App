@@ -14,7 +14,6 @@ import kotlin.coroutines.resumeWithException
 suspend fun getCurrentLocation(context: Context): Location {
     val client = LocationServices.getFusedLocationProviderClient(context)
 
-    // Essaie d'abord la dernière position connue (instantané)
     val lastLocation = suspendCancellableCoroutine<Location?> { cont ->
         client.lastLocation
             .addOnSuccessListener { cont.resume(it) }
@@ -23,7 +22,6 @@ suspend fun getCurrentLocation(context: Context): Location {
 
     if (lastLocation != null) return lastLocation
 
-    // Sinon demande une position précise
     val cts = CancellationTokenSource()
     return suspendCancellableCoroutine { cont ->
         client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)

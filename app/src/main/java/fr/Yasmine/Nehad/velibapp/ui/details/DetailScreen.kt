@@ -84,7 +84,6 @@ fun DetailScreen(
             ) {
                 StatusCard(isInstalled = station.isInstalled, isRenting = station.isRenting)
 
-                // Distance + boutons navigation
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         if (distance != null) {
